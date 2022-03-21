@@ -1,0 +1,5 @@
+(fp_lib_table
+  (lib (name SPH0641LU4H)(type KiCad)(uri ${KIPRJMOD}/SPH0641LU4H.pretty)(options "")(descr ""))
+  (lib (name GroveCon)(type KiCad)(uri ${KIPRJMOD}/GroveCon.pretty)(options "")(descr ""))
+  (lib (name RV)(type KiCad)(uri ${KIPRJMOD}/RV.pretty)(options "")(descr ""))
+)

@@ -1,0 +1,98 @@
+
+(rules PCB ssl
+  (snap_angle 
+    fortyfive_degree
+  )
+  (autoroute_settings
+    (fanout off)
+    (autoroute on)
+    (postroute on)
+    (vias on)
+    (via_costs 50)
+    (plane_via_costs 5)
+    (start_ripup_costs 100)
+    (start_pass_no 7521)
+    (layer_rule F.Cu
+      (active on)
+      (preferred_direction horizontal)
+      (preferred_direction_trace_costs 1.0)
+      (against_preferred_direction_trace_costs 2.0)
+    )
+    (layer_rule B.Cu
+      (active on)
+      (preferred_direction vertical)
+      (preferred_direction_trace_costs 1.0)
+      (against_preferred_direction_trace_costs 2.0)
+    )
+  )
+  (rule
+    (width 250.0)
+    (clear 180.2)
+    (clear 125.0 (type smd_to_turn_gap))
+    (clear 45.0 (type smd_smd))
+  )
+  (padstack "Via[0-1]_800:400_um"
+    (shape
+      (circle F.Cu 800.0 0.0 0.0)
+    )
+    (shape
+      (circle B.Cu 800.0 0.0 0.0)
+    )
+    (attach off)
+  )
+  (via 
+    "Via[0-1]_800:400_um" "Via[0-1]_800:400_um" default
+  )
+  (via 
+    "Via[0-1]_800:400_um-kicad_default" "Via[0-1]_800:400_um" "kicad_default"
+  )
+  (via 
+    "Via[0-1]_800:400_um-POW" "Via[0-1]_800:400_um" POW
+  )
+  (via_rule
+    default "Via[0-1]_800:400_um"
+  )
+  (via_rule
+    "kicad_default" "Via[0-1]_800:400_um-kicad_default"
+  )
+  (via_rule
+    POW "Via[0-1]_800:400_um-POW"
+  )
+  (class default
+    (clearance_class default)
+    (via_rule default)
+    (rule
+      (width 250.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+  (class "kicad_default"
+    "Net-(C2-Pad1)" "Net-(D1-Pad1)" "Net-(D2-Pad1)" "Net-(D3-Pad1)" "Net-(D4-Pad1)" "Net-(D5-Pad1)" "Net-(D6-Pad1)" "Net-(D7-Pad1)"
+    "Net-(D8-Pad1)" "/I2C_SDA" "/I2C_SCL" /RX /TX /SWDIO /SWCLK "Net-(R1-Pad1)"
+    "Net-(R2-Pad1)" "/M1_CLK" /LED1 /LED2 /LED3 "Net-(R7-Pad1)" "Net-(R8-Pad1)" "Net-(R9-Pad1)"
+    "Net-(R10-Pad1)" /LED4 /LED5 /LED6 /LED7 /LED8 "/M2_DAT" "/M1_DAT"
+    GND "Net-(C11-Pad1)" /AD0 /AD1 "Net-(D9-Pad1)" "/MIC_CLK" "/SPI1_DAT" "/SPI2_DAT"
+    "/M3_DAT" "/SPI3_DAT" "/SPI4_DAT" "/M4_DAT"
+    (clearance_class "kicad_default")
+    (via_rule kicad_default)
+    (rule
+      (width 250.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+  (class POW
+    +5V +3V3
+    (clearance_class POW)
+    (via_rule POW)
+    (rule
+      (width 250.0)
+    )
+    (circuit 
+      (use_layer F.Cu B.Cu)
+    )
+  )
+)
