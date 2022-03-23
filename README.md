@@ -2,6 +2,8 @@
 # Sound_Direction_Sensor
 This board detects the direction of sound with 4-pdm mems mic using GCC-PHAT algorithm.
 
+<img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds5.gif" width="360">
+
 ## 概要
   * 音の時間差から計算して8つのLED及びI2C、UARTで結果(角度)を出力する基板です  
   * 4つのPDMデジタルマイクSPH0641LMおよびSTM32F411RCを搭載しています  
@@ -25,6 +27,9 @@ This board detects the direction of sound with 4-pdm mems mic using GCC-PHAT alg
   * リセットや電源再投入で音変化（標準偏差）閾値は消去され、保持されません(可変抵抗値が再度反映)  
   * 電源投入後、自動的に方位検知を開始するため、電源供給のみで方位検知可能です  
   
+<img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds3.jpg" width="360">
+<img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds4.jpg" width="360">
+  
 ## 外形
   * 40mm円形基板(コネクタ含まず)
   * マイク距離36mm円形
@@ -43,6 +48,7 @@ This board detects the direction of sound with 4-pdm mems mic using GCC-PHAT alg
   * 頻繁に方位LEDが点灯する場合や誤検知が多発する場合は音変化閾値を上げてください  
   * 場合によって起動直後数秒間はソフトフィルタ処理の影響で方位検出が安定しない場合があります  
   * Groveケーブルは同梱されていません 別途ご用意ください   
+  
   
 ## UART通信 
   * 起動直後はファームのバージョンおよびビルド日時、音変化の閾値が出力されます  
@@ -98,6 +104,14 @@ This board detects the direction of sound with 4-pdm mems mic using GCC-PHAT alg
 
 ※オフセット0x04で設定値のHighByteとLowByteの2バイトを一度で書き込んでください  
 (スレーブアドレス)+(オフセット)+(設定値2Byte)  
+
+<img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds1.jpg" width="360">
+
+<img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds2.jpg" width="360">
+
+
+
+
 
 https://youtu.be/5QTcDwFN5Rs
 
