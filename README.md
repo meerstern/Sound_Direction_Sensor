@@ -109,11 +109,14 @@ This board detects the direction of sound with 4-pdm mems mic using GCC-PHAT alg
 ※オフセット0x04で設定値のHighByteとLowByteの2バイトを一度で書き込んでください  
 (スレーブアドレス)+(オフセット)+(設定値2Byte)  
 
+## 販売サイト
+  * [スイッチサイエンス][2]
+
 <img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds1.jpg" width="360">
 
 <img src="https://github.com/meerstern/Sound_Direction_Sensor/blob/main/IMG/sds2.jpg" width="360">
 
-
+[2]: https://www.switch-science.com/products/8129
 
 
 
