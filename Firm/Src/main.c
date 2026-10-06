@@ -238,7 +238,7 @@ int main(void)
   	HAL_UART_Receive_DMA(&huart2, (uint8_t*)  UART2_Data, 1);
   	HAL_I2C_EnableListen_IT(&hi2c3);
 
-	printf("\r\nSound Direction Sensor v1.0 (" __DATE__ ")\r\n");
+	printf("\r\nSound Direction Sensor v1.1 (" __DATE__ ")\r\n");
 
 	// Initialize Cic Filter for PDM MEMS MIC
 	intiCicFilterAll();
@@ -253,7 +253,7 @@ int main(void)
     // FFT init
     float SPI1_BaudRate = (float)SystemCoreClock / 1.0f / 128.0f;//SPI_BAUDRATEPRESCALER_128
     FFT_SampleRate = SPI1_BaudRate / DECIMATION_M;
-
+    printf("Sampling Frq: %.1f kHz\r\n",FFT_SampleRate/1000.0);
     prepareWindow(FFT_SampleRate);
     initLed();
 

@@ -34,6 +34,8 @@ extern uint8_t I2CRegData[8];
 #define USE_SIMP		1
 
 #define MAXOFFSET		5	//Determined from Mic Distance and Target Frequency, Sampling Frequency
+#define BETA     		0.8f
+#define EPSILON  		1.0e-12f
 
 // FFT Settings
 #define FFTFLAG        	0
@@ -57,10 +59,10 @@ float FFT_inp4[PDM_SAMPLE_SIZE] = {0.0f};
 float actBuffer[256]={0.0f};
 uint16_t actBufferCount;
 float ActivitySetValue=0.0f;
-
+float confidence = 0.0f;
 
 /* Private function prototypes -----------------------------------------------*/
-static void findMaxIndex(float *data, uint16_t size, float *maxVal, uint16_t *maxIndex);
+static void findMaxIndex(float *data, uint16_t size, float *maxVal, uint16_t *maxIndex,  float *maxVal_2nd, uint16_t *maxIndex_2nd);
 static void shiftArray(float *input, float *output, uint16_t size);
 static int calcDelay(float *inputA, float *inputB, uint16_t length, uint16_t mode, uint16_t offset);
 static void calcQuadDelay(float *inputA, float *inputB, float *inputC, float *inputD, int length, int mode, int offset, int *delay);
@@ -74,13 +76,6 @@ float calcAngle()
 {
 	float CalcDeg = -1.0f;
 	float CalcDegOrg;
-	float FFT_OutArg1;
-	float FFT_OutArg2;
-	float FFT_OutArg3;
-	float FFT_OutArg4;
-
-	float SumArgX,SumArgY;
-	float ArgVec[4][2];
 	int intDelay[5];
 
 	static float ActivitySetValueOld=0.0f;
@@ -109,47 +104,9 @@ float calcAngle()
 
 	// Calc Delay
 	int maxOffset = MAXOFFSET;
+
 	calcQuadDelay(FFT_inp1, FFT_inp2, FFT_inp3, FFT_inp4, PDM_SAMPLE_SIZE, ALGORITHM, maxOffset, intDelay);
-
-	// Align the center
-	float avedeg = ( 0.0f + intDelay[0] + intDelay[1] + intDelay[2] )/4;
-	FFT_OutArg1 = 0.0f -avedeg;
-	FFT_OutArg2 = intDelay[0]-avedeg;
-	FFT_OutArg3 = intDelay[1]-avedeg;
-	FFT_OutArg4 = intDelay[2]-avedeg;
-
-	/* * * * * * * *
-	 *   MIC Pos   *
-	 *  M1:(-1,0)  *
-	 *  M2:(0,-1)  *
-	 *  M3:(1,0)   *
-	 *  M4:(0,1)   *
-	 * * * * * * * */
-
-	// Calc Sound Vector from delay
-	ArgVec[0][0] = -1.0f*FFT_OutArg1;
-	ArgVec[0][1] = 0.0f*FFT_OutArg1;
-
-	ArgVec[1][0] = 0.0f*FFT_OutArg2;
-	ArgVec[1][1] = -1.0f*FFT_OutArg2;
-
-	ArgVec[2][0] = 1.0f*FFT_OutArg3;
-	ArgVec[2][1] = 0.0f*FFT_OutArg3;
-
-	ArgVec[3][0] = 0.0f*FFT_OutArg4;
-	ArgVec[3][1] = 1.0f*FFT_OutArg4;
-
-	SumArgX=ArgVec[0][0]+ArgVec[1][0]+ArgVec[2][0]+ArgVec[3][0];
-	SumArgY=ArgVec[0][1]+ArgVec[1][1]+ArgVec[2][1]+ArgVec[3][1];
-
-	if( SumArgX == 0.0f )
-		SumArgX = 0.00000001f;
-
-	// Calc Degree of Sound Source from Sound Vector
-	float r = sqrtf(SumArgY*SumArgY+SumArgX*SumArgX);
-	if(SumArgY<0)	CalcDeg =-acosf(SumArgX/r)*180.0f/PI;
-	else 			CalcDeg =+acosf(SumArgX/r)*180.0f/PI;
-
+	CalcDeg = atan2f(intDelay[1], intDelay[0])*180.0f/PI;
 	if( CalcDeg < 0.0f)
 		CalcDeg = CalcDeg + 360.0f;
 
@@ -164,13 +121,16 @@ float calcAngle()
 	}
 
 	// Eliminate noise in case of small sound
-	if( activityValue < ActivitySetValue )
+	if( activityValue < ActivitySetValue || confidence< 0.1f)
 		CalcDeg = -1.0f;
+
+
+	printf("Delay: %d, %d, \t Confidence: %.2f\t",intDelay[0],intDelay[1],confidence);
 
 
 	updateReg(CalcDeg, CalcDegOrg, activityValue);
 
-	printf("Deg:%1.1f,\t DegOrg:%1.1f,\t Act:%1.2f,\t",CalcDeg, CalcDegOrg, activityValue);
+	printf("Deg:%1.1f,\t DegOrg:%1.1f,\t Act:%1.2f,\tTH:%1.1f",CalcDeg, CalcDegOrg, activityValue,ActivitySetValue);
 
 	printf("\r\n");
 
@@ -250,7 +210,10 @@ static int calcDelay(float *inputA, float *inputB, uint16_t length, uint16_t mod
 	float tmp_c;
 	int16_t delay=0.0;
 	float maxval;
+	float maxval2;
 	uint16_t max_i;
+	uint16_t max_i2;
+
 
 	uint16_t center_i = ceil(length/2.0);
 	uint16_t start_i = center_i-offset;
@@ -281,16 +244,22 @@ static int calcDelay(float *inputA, float *inputB, uint16_t length, uint16_t mod
 
 	for (size_t i=0;i<length;i++)
 	{
-	  if(20<i && i<40)//Limit Frq Range around 1kHz
-	  {
-		  p_inputA[i]=1.0*p_inputA[i];
-		  p_inputB[i]=1.0*p_inputB[i];
-	  }
-	  else
-	  {
-		  p_inputA[i]=0.1*p_inputA[i];
-		  p_inputB[i]=0.1*p_inputB[i];
-	  }
+
+	    float re = p_inputA[i];
+	    float im = p_inputB[i];
+		float mag = sqrtf(re * re + im * im);
+		float scale = 1.0f / powf(mag + EPSILON, BETA);
+
+		if(20<i && i<40)//Limit Frq Range around 1kHz 20-40
+		{
+			p_inputA[i]=scale*p_inputA[i];
+			p_inputB[i]=scale*p_inputB[i];
+		}
+		else
+		{
+			p_inputA[i]=0.1*p_inputA[i];
+			p_inputB[i]=0.1*p_inputB[i];
+		}
 
 	}
 
@@ -328,10 +297,21 @@ static int calcDelay(float *inputA, float *inputB, uint16_t length, uint16_t mod
 	}
 
 	shiftArray(xcorr, p_output, length);
-	findMaxIndex(p_output+start_i,len,&maxval,&max_i);
+	findMaxIndex(p_output+start_i,len,&maxval,&max_i,&maxval2,&max_i2);
+
+	float dist = fabsf(max_i-max_i2);
+	float dist_confidence = dist/(float)offset;
+	if (dist_confidence > 1.0f)
+		dist_confidence = 1.0f;
+
+	confidence = (maxval - maxval2)/maxval;
+	confidence = confidence*dist_confidence;
+
 	delay = max_i - offset;
 	return delay;
 }
+
+
 
 
 static void shiftArray(float *input, float *output, uint16_t size)
@@ -341,30 +321,46 @@ static void shiftArray(float *input, float *output, uint16_t size)
 	  memcpy(&output[size-half],input,sizeof(float)*half);
 }
 
-static void findMaxIndex(float *data, uint16_t size, float *maxVal, uint16_t *maxIndex)
+static void findMaxIndex(float *data, uint16_t size, float *maxVal, uint16_t *maxIndex,  float *maxVal_2nd, uint16_t *maxIndex_2nd)
 {
-	float val=data[0];
-	uint16_t index=0;
+	float val1=data[0];//1st Peak
+	float val2=data[0];//2nd Peak
+	uint16_t index1=0;
+	uint16_t index2=0;
 
-	for(size_t i = 0; i < size; i++)
+
+	for (size_t i = 0; i < size; i++)
 	{
-		if(data[i]>val)
+		if (data[i] > val1)
 		{
-			val=data[i];
-			index=i;
+			val2 = val1;
+			index2 = index1;
+
+			val1 = data[i];
+			index1 = i;
+		}
+		else if (data[i] > val2)
+		{
+			val2 = data[i];
+			index2 = i;
 		}
 	}
 
-	*maxVal=val;
-	*maxIndex=index;
+	*maxVal = val1;
+	*maxIndex = index1;
+	*maxVal_2nd = val2;
+	*maxIndex_2nd = index2;
+
 }
+
+
 
 static void calcQuadDelay(float *inputA, float *inputB, float *inputC, float *inputD, int length, int mode, int offset, int *delay)
 {
-	delay[0] = calcDelay(inputA, inputB, length, mode, offset);//A,C
-	delay[1] = calcDelay(inputA, inputC, length, mode, offset);//B,D
-	delay[2] = calcDelay(inputA, inputD, length, mode, offset);//A,D
+	delay[0] = calcDelay(inputA, inputC, length, mode, offset);//A,C
+	delay[1] = calcDelay(inputB, inputD, length, mode, offset);//B,D
 }
+
 
 //static float calcAbs(float val)
 //{
