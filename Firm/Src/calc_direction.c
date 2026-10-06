@@ -124,9 +124,9 @@ float calcAngle()
 	if( activityValue < ActivitySetValue || confidence< 0.1f)
 		CalcDeg = -1.0f;
 
-
+#ifdef FACTORY_CHECK_MODE
 	printf("Delay: %d, %d, \t Confidence: %.2f\t",intDelay[0],intDelay[1],confidence);
-
+#endif
 
 	updateReg(CalcDeg, CalcDegOrg, activityValue);
 
